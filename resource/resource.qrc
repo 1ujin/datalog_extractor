@@ -1,0 +1,17 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+    <file>images/CESI_logo.png</file>
+    <file>images/branch-vline.png</file>
+    <file>images/branch-more.png</file>
+    <file>images/branch-end.png</file>
+    <file>images/branch-closed.png</file>
+    <file>images/branch-opened.png</file>
+    <file>images/play.png</file>
+    <file>images/expand.png</file>
+    <file>images/expand-right.png</file>
+    <file>images/compare.png</file>
+    <file>images/comparison.png</file>
+    <file>images/export-excel2.png</file>
+    <file>images/data-extract.png</file>
+</qresource>
+</RCC>
