@@ -18,6 +18,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVB
 from PyQt5.QtGui import QIcon, QPixmap, QCursor, QTransform
 from PyQt5.QtCore import Qt, QPoint, QSize, QObject, QEvent
 
+from . import datalog_extractor  # pylint: disable=unused-import
+
 MIN_SIZE = -sys.maxsize - 1
 
 
@@ -26,7 +28,7 @@ class FileListBox(QWidget):
 
     signal_row_count = QtCore.pyqtSignal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: "datalog_extractor.DatalogExtractor" = None):
         super(FileListBox, self).__init__()
         self.clipboard = QApplication.clipboard()
         self.parent = parent
@@ -110,14 +112,19 @@ class FileListBox(QWidget):
         if dir_name not in self.dir_set:
             self.dir_set.add(dir_name)
             QListWidgetItem(dir_name, self.folder_list)
+            for root, _, files in os.walk(dir_name, topdown=False):
+                if len(files) > 0:
+                    self.parent.test_name_tree.format_file = os.path.join(root, files[0])
+                    break
         self.signal_row_count.emit(self.folder_list.count() + self.file_list.count())
 
     def open_file(self):
         """ 打开文件多选对话框 """
-        file_list = set(QFileDialog.getOpenFileNames(self, "选择文件", filter="All Files (*.*);;Text Files (*.txt)",
-                                                     initialFilter="Text Files (*.txt)")[0])
+        file_list = QFileDialog.getOpenFileNames(self, "选择文件", filter="All Files (*.*);;Text Files (*.txt)",
+                                                 initialFilter="Text Files (*.txt)")[0]
         if len(file_list) == 0:
             return
+        self.parent.test_name_tree.format_file = file_list[0]
         for file in file_list:
             if file not in self.file_set:
                 self.file_set.add(file)
@@ -282,13 +289,28 @@ class CustomEventHandler(QObject):
             md = event.mimeData()
             if md.hasUrls():
                 urls = [url.toLocalFile() for url in md.urls()]
+                first_path = None
                 for url in urls:
                     if os.path.isfile(url) and url not in obj.file_set:
+                        # 添加文件
                         obj.file_set.add(url)
                         QListWidgetItem(url, obj.folder_list)
+                        if first_path is None:
+                            first_path = url
                     elif os.path.isdir(url) and url not in obj.dir_set:
+                        # 添加路径
                         obj.dir_set.add(url)
                         QListWidgetItem(url, obj.folder_list)
+                        if first_path is None:
+                            first_path = url
+                if first_path is not None:
+                    if os.path.isfile(first_path):
+                        obj.parent.test_name_tree.format_file = first_path
+                    elif os.path.isdir(first_path):
+                        for root, _, files in os.walk(first_path, topdown=False):
+                            if len(files) > 0:
+                                obj.parent.test_name_tree.format_file = os.path.join(root, files[0])
+                                break
                 obj.signal_row_count.emit(obj.folder_list.count() + obj.file_list.count())
                 return True
         return super().eventFilter(obj, event)

@@ -58,7 +58,7 @@ class FormatDialog(QDialog):
     column_width = [11, 6, 9, 26, 12, 10, 15, 15, 15, 15, 3]
     signal_pin_dict = QtCore.pyqtSignal(dict)
 
-    def __init__(self, parent=None, load_mode=False):
+    def __init__(self, parent=None, load_mode=False, format_file=None):
         super(FormatDialog, self).__init__(parent)
         self.parent = parent
         self.load_mode = load_mode
@@ -132,11 +132,13 @@ class FormatDialog(QDialog):
             None
         ][-1])
         self.mode_cb.setCurrentText(getattr(parent, "mode"))
-        self.path_line_edit.textChanged.connect(
-            lambda text: None if self.mode_cb.currentText() == "爱德万" else self.load_datalog(text))
+        self.path_line_edit.textChanged.connect(self.load_datalog)
 
         if not self.load_mode:
             group1.hide()
+
+        if format_file:
+            self.path_line_edit.setText(format_file)
 
     def select_datalog(self):
         filename = QFileDialog.getOpenFileName(self, "选择 DataLog 文件", filter="All Files (*.*);;Text Files (*.txt)",
@@ -144,8 +146,11 @@ class FormatDialog(QDialog):
         if filename is None or len(filename) == 0:
             return
         self.path_line_edit.setText(filename)
+        setattr(self.parent, "format_file", filename)
 
     def load_datalog(self, filename):
+        if self.mode_cb.currentText() == "爱德万":
+            return
         with open(filename, "r", encoding="utf-8") as f:
             line = f.readline()
             while line is not None and len(line) > 0:

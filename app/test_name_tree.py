@@ -70,6 +70,7 @@ class TestNameTree(QWidget):
 
     signal_has_checked = QtCore.pyqtSignal(int)
     mode = "泰瑞达"
+    format_file = None
 
     def __init__(self, parent=None):
         super(TestNameTree, self).__init__(parent)
@@ -180,7 +181,7 @@ class TestNameTree(QWidget):
 
     def load(self):
         """ 打开配置对话框并导入测试项 """
-        dialog = FormatDialog(self, load_mode=True)
+        dialog = FormatDialog(self, load_mode=True, format_file=self.format_file)
         dialog.signal_pin_dict.connect(self.generate_tree)
         dialog.resize(500, dialog.height())
         dialog.exec()
