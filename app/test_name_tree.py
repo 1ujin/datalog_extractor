@@ -193,17 +193,22 @@ class TestNameTree(QWidget):
             if it.value().childCount() == 0:
                 it.value().setCheckState(0, Qt.Checked)
             it.__iadd__(1)
+        self.signal_has_checked.emit(1)
 
     def reverse_selected_tree_item(self):
         """ 反选 """
+        cnt = 0
         it = QTreeWidgetItemIterator(self.tree, QTreeWidgetItemIterator.All)
         while it.value():
             if it.value().childCount() == 0:
                 if it.value().checkState(0) == Qt.Checked:
                     it.value().setCheckState(0, Qt.Unchecked)
+                    cnt -= 1
                 elif it.value().checkState(0) == Qt.Unchecked:
                     it.value().setCheckState(0, Qt.Checked)
+                    cnt += 1
             it.__iadd__(1)
+        self.signal_has_checked.emit(cnt)
 
     def clear_selected_tree_item(self):
         """ 清空 """
@@ -212,6 +217,7 @@ class TestNameTree(QWidget):
             if it.value().childCount() == 0:
                 it.value().setCheckState(0, Qt.Unchecked)
             it.__iadd__(1)
+        self.signal_has_checked.emit(0)
 
     def is_any_selected(self):
         it = QTreeWidgetItemIterator(self.tree, QTreeWidgetItemIterator.Checked)
