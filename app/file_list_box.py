@@ -44,9 +44,7 @@ class FileListBox(QWidget):
         self.setStyleSheet("\
             QPushButton { font-family: \"微软雅黑\"; } \
             QListWidget { font-family: \"微软雅黑\"; font-size: 18px; }")
-        self.init_ui()
 
-    def init_ui(self):
         self.setAcceptDrops(True)
         self.installEventFilter(CustomEventHandler(self))
 
@@ -63,12 +61,15 @@ class FileListBox(QWidget):
         del_btn.clicked.connect(self.delete_path)
         clr_btn = QPushButton("清空", self)
         clr_btn.clicked.connect(self.clear_path)
+        self.retest_btn = QPushButton("只显示最末轮结果", self)
+        self.retest_btn.clicked.connect(self.show_retest)
 
         folder_btn_layout = QHBoxLayout()
         folder_btn_layout.addWidget(folder_btn)
         folder_btn_layout.addWidget(file_btn)
         folder_btn_layout.addWidget(del_btn)
         folder_btn_layout.addWidget(clr_btn)
+        folder_btn_layout.addWidget(self.retest_btn)
         folder_btn_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum))
         # folder_btn_layout.addWidget(extract_btn)
         # folder_btn_layout.addWidget(export_btn)
@@ -103,6 +104,13 @@ class FileListBox(QWidget):
         hb_layout.addLayout(file_btn_layout)
         hb_layout.addWidget(self.file_list, stretch=1)
         layout.addLayout(hb_layout)
+
+    def show_retest(self):
+        if self.parent.table.show_retest is True:
+            self.retest_btn.setText("显示多轮复测结果")
+        else:
+            self.retest_btn.setText("只显示最末轮结果")
+        self.parent.table.show_retest = not self.parent.table.show_retest
 
     def open_dir(self):
         """ 打开选择路径对话框 """

@@ -25,11 +25,11 @@ def export_excel(table_widget, filename, progress=None, taskbar_progress=None):
         progress.setLabelText("正在导出（" + str(i + 1) + "/" + str(table_widget.count()) + ")")
         ws = wb.create_sheet()
         ws.title = table_widget.tabText(i)
-        export_sheet(table_widget.widget(i), ws, 1, progress, taskbar_progress)
+        export_sheet(table_widget.widget(i), ws, 1, progress, taskbar_progress, table_widget.freeze_cell)
     wb.save(filename)
 
 
-def export_sheet(table: QTableWidget, ws, header_row_cnt, progress=None, taskbar_progress=None):
+def export_sheet(table: QTableWidget, ws, header_row_cnt, progress=None, taskbar_progress=None, freeze_cell=None):
     max_row = table.rowCount()
     max_col = table.columnCount()
     total = max_col * max_row
@@ -142,8 +142,6 @@ def export_sheet(table: QTableWidget, ws, header_row_cnt, progress=None, taskbar
     # 左上角单元格
     row_span = table.rowSpan(0, 0)
     col_span = table.columnSpan(0, 0)
-    cell = ws.cell(1, 1)
-    cell.alignment = styles.alignment.Alignment(vertical="center", wrap_text=True)
     ws.merge_cells(start_row=1, start_column=1, end_row=row_span, end_column=col_span)
 
     if progress is not None:
@@ -153,7 +151,8 @@ def export_sheet(table: QTableWidget, ws, header_row_cnt, progress=None, taskbar
         taskbar_progress.reset()
 
     # 冻结
-    ws.freeze_panes = chr(col_span + ord("A")) + str(row_span + 1)
+    if freeze_cell:
+        ws.freeze_panes = utils.get_column_letter(freeze_cell[0]) + str(freeze_cell[1])
 
     # 隐藏
     for i in range(max_row):

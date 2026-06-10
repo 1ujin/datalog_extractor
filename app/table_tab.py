@@ -55,6 +55,8 @@ class EditableTabBar(QTabBar):
 class TableTab(QTabWidget):
     """docstring for Table"""
     only_failed = False
+    show_retest = True
+    freeze_cell = None
 
     def __init__(self, parent: "datalog_extractor.DatalogExtractor"):
         super(TableTab, self).__init__(parent)
@@ -69,7 +71,7 @@ class TableTab(QTabWidget):
         self.taskbar_progress = None
 
     @staticmethod
-    def extract_j750(path, compare_chip_dict, pin_map, regex, begin_regex):
+    def extract_j750(path, compare_chip_dict, pin_map, regex, begin_regex, show_retest: bool):
         total = 0
         # 读取文件
         with open(path, "r", encoding="utf-8") as f:
@@ -152,13 +154,15 @@ class TableTab(QTabWidget):
                         else:
                             val = Decimal(val) * 1000 * 1000 * 1000 * 1000
                         val /= unit
+                        if not show_retest:
+                            compare_pin_values.clear()
                         compare_pin_values.append(val)
                         total += 1
                 line = f.readline()
         return total
 
     @staticmethod
-    def extract_v93k(path, compare_chip_dict, pin_map):
+    def extract_v93k(path, compare_chip_dict, pin_map, show_retest: bool):
         total = 0
         # 读取文件
         with open(path, "r", encoding="utf-8") as f:
@@ -261,6 +265,8 @@ class TableTab(QTabWidget):
                                 else:
                                     val = Decimal(val) * 1000 * 1000 * 1000 * 1000
                                 val /= unit
+                                if not show_retest:
+                                    compare_pin_values.clear()
                                 compare_pin_values.append(val)
                                 total += 1
                         else:
@@ -340,9 +346,9 @@ class TableTab(QTabWidget):
                         self.taskbar_progress.setValue(done)
                 path, passed, compare_chip_dict = file_tuple
                 if self.parent.test_name_tree.mode == "爱德万":
-                    total += self.extract_v93k(path, compare_chip_dict, pin_map)
+                    total += self.extract_v93k(path, compare_chip_dict, pin_map, self.show_retest)
                 else:
-                    total += self.extract_j750(path, compare_chip_dict, pin_map, regex, begin_regex)
+                    total += self.extract_j750(path, compare_chip_dict, pin_map, regex, begin_regex, self.show_retest)
 
         if self.progress:
             self.progress.setLabelText("正在填充表格")
@@ -403,14 +409,28 @@ class TableTab(QTabWidget):
                 table = QTableWidget(0, 0)
 
                 table.clear()
-                if self.parent.test_name_tree.mode == "爱德万":
-                    chip_row = 4
-                else:
-                    chip_row = 3
-                table.setRowCount(chip_row)
                 table.setColumnCount(2)
-                table.setSpan(0, 0, chip_row, 2)
-                table.setItem(0, 0, self.get_table_item(folder_path, Qt.AlignVCenter | Qt.TextWordWrap))
+                if self.parent.test_name_tree.mode == "爱德万":
+                    chip_row = 6
+                    table.setRowCount(chip_row)
+                    table.setItem(0, 0, self.get_table_item("TestSuite"))
+                    table.setItem(1, 0, self.get_table_item("Test Name"))
+                    table.setItem(2, 0, self.get_table_item("Pin"))
+                    table.setItem(3, 0, self.get_table_item("Min"))
+                    table.setItem(4, 0, self.get_table_item("Max"))
+                    table.setItem(5, 0, self.get_table_item("Unit"))
+                else:
+                    chip_row = 5
+                    table.setRowCount(chip_row)
+                    table.setItem(0, 0, self.get_table_item("Test Name"))
+                    table.setItem(1, 0, self.get_table_item("Pin"))
+                    table.setItem(2, 0, self.get_table_item("Min"))
+                    table.setItem(3, 0, self.get_table_item("Max"))
+                    table.setItem(4, 0, self.get_table_item("Unit"))
+                    table.setRowCount(chip_row)
+                # table.setSpan(0, 0, chip_row, 2)
+                # table.setItem(0, 0, self.get_table_item(folder_path, Qt.AlignVCenter | Qt.TextWordWrap))
+                self.freeze_cell = (3, chip_row + 1)
 
                 testsuite_col = 2
                 if self.parent.test_name_tree.mode == "泰瑞达":
@@ -475,6 +495,7 @@ class TableTab(QTabWidget):
                         break
                 if round_col_removable:
                     table.removeColumn(1)
+                    self.freeze_cell = (self.freeze_cell[0] - 1, self.freeze_cell[1])
                 self.addTab(table, os.path.basename(folder_name))
 
         except Exception as e:  # pylint: disable=broad-except
@@ -536,22 +557,21 @@ class TableTab(QTabWidget):
             temp_list.sort()
 
             pin_name_col = 0
-            bound = ""
             if lower_bound is None:
                 lower_bound = ""
             if upper_bound is None:
                 upper_bound = ""
-            if lower_bound != "" or upper_bound != "":
-                bound = "[%s,%s]" % (str(lower_bound), str(upper_bound))
             unit = " (" + unit + ")"
             col_sum = testsuite_col + test_name_col + pin_name_col
-            table.setItem(test_name_row, col_sum, self.get_table_item(test_name + " " + bound + unit))
+            table.setItem(test_name_row, col_sum, self.get_table_item(test_name + unit))
             for pin_item in pin_dict.items():
                 if pin_item[0] == "__upper_bound" or pin_item[0] == "__lower_bound" or pin_item[0] == "__unit":
                     continue
                 col_sum = testsuite_col + test_name_col + pin_name_col
                 table.setItem(test_name_row + 1, col_sum, self.get_table_item(pin_item[0] + unit))
-                table.setItem(test_name_row + 2, col_sum, self.get_table_item(bound))
+                table.setItem(test_name_row + 2, col_sum, self.get_table_item(lower_bound))
+                table.setItem(test_name_row + 3, col_sum, self.get_table_item(upper_bound))
+                table.setItem(test_name_row + 4, col_sum, self.get_table_item(unit[2:-1]))
                 pin_name_col += 1
             table.setSpan(test_name_row, testsuite_col + test_name_col, 1, pin_name_col)
             if pin_name_col > 10:
