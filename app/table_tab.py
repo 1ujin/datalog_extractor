@@ -387,6 +387,7 @@ class TableTab(QTabWidget):
             if sys.platform == "win32":
                 self.taskbar_progress.resume()
                 self.taskbar_progress.reset()
+            gc.collect()
             return
 
         if len(path_dict) == 0:
@@ -399,7 +400,7 @@ class TableTab(QTabWidget):
                 self.progress.setLabelText("正在填充表格（" + str(folder_idx + 1) + "/" + str(len(path_dict)) + "）")
                 folder_path, folder_od = folder_item
                 folder_name = os.path.basename(folder_path)
-                table = QTableWidget(0, 0, self)
+                table = QTableWidget(0, 0)
 
                 table.clear()
                 if self.parent.test_name_tree.mode == "爱德万":
@@ -419,6 +420,7 @@ class TableTab(QTabWidget):
                         if self.progress.wasCanceled():
                             table.setRowCount(0)
                             table.setColumnCount(0)
+                            table.clear()
                             raise Exception("user canceled")
                         # 循环测试项
                         testsuite, test_dict = testsuite_item
@@ -444,6 +446,7 @@ class TableTab(QTabWidget):
                             if self.progress.wasCanceled():
                                 table.setRowCount(0)
                                 table.setColumnCount(0)
+                                table.clear()
                                 raise Exception("user canceled")
                             testsuite, testsuite_od = testsuite_item
                             compare_testsuite_od = chip_dict.get(testsuite)
@@ -487,6 +490,8 @@ class TableTab(QTabWidget):
             if sys.platform == "win32":
                 self.taskbar_progress.resume()
                 self.taskbar_progress.reset()
+            for i in range(self.count()):
+                self.removeTab(i)
             self.clear()
             del pin_map
             del path_dict
@@ -510,6 +515,7 @@ class TableTab(QTabWidget):
             if self.progress.wasCanceled():
                 table.setRowCount(0)
                 table.setColumnCount(0)
+                table.clear()
                 raise Exception("user canceled")
             # 循环测试项
             test_name, pin_dict = test_item
@@ -566,6 +572,7 @@ class TableTab(QTabWidget):
             if self.progress.wasCanceled():
                 table.setRowCount(0)
                 table.setColumnCount(0)
+                table.clear()
                 raise Exception("user canceled")
 
             lower_bound: Decimal = test_dict.get("__lower_bound")
@@ -576,6 +583,7 @@ class TableTab(QTabWidget):
                 if self.progress.wasCanceled():
                     table.setRowCount(0)
                     table.setColumnCount(0)
+                    table.clear()
                     raise Exception("user canceled")
                 if compare_test_dict is None:
                     # self.insertRow(self.rowCount())
