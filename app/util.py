@@ -17,6 +17,20 @@ from PyQt5.QtWidgets import QTableWidget
 
 MIN_SIZE = -sys.maxsize - 1
 
+LOOKUP_UNIT = {
+    "a": "AMPERE", "ma": "AMPERE", "ua": "AMPERE", "na": "AMPERE", "pa": "AMPERE",
+    "v": "VOLT", "mv": "VOLT", "uv": "VOLT", "nv": "VOLT", "pv": "VOLT",
+    "w": "WATT", "mw": "WATT", "uw": "WATT", "nw": "WATT", "pw": "WATT",
+    "hz": "HERTZ", "khz": "HERTZ", "mhz": "HERTZ", "ghz": "HERTZ",
+}
+
+UNIT = {
+    "AMPERE":   {"A":  1e12, "mA":  1e9, "uA":  1e6, "nA":  1e3,  "pA": 1e0},
+    "VOLT":     {"V":  1e12, "mV":  1e9, "uV":  1e6, "nV":  1e3,  "pV": 1e0},
+    "WATT":     {"W":  1e12, "mW":  1e9, "uW":  1e6, "nW":  1e3,  "pW": 1e0},
+    "HERTZ":    {"Hz": 1e0,  "kHz": 1e3, "MHz": 1e6, "GHz": 1e9},
+}
+
 
 def export_excel(table_widget, filename, progress=None, taskbar_progress=None):
     wb = Workbook()
@@ -188,47 +202,17 @@ def convert_decimal(val):
 
 
 def convert_unit(val: Decimal, src_unit: str, tar_unit: str) -> Decimal:
-    if src_unit.endswith("hz"):
-        if src_unit == "hz":
-            val = val * 1
-        elif src_unit == "Khz":
-            val = val * 1000
-        elif src_unit == "Mhz":
-            val = val * 1000 * 1000
-        elif src_unit == "Ghz":
-            val = val * 1000 * 1000 * 1000
-    else:
-        if src_unit.find("p") > -1:
-            val = val * 1
-        elif src_unit.find("n") > -1:
-            val = val * 1000
-        elif src_unit.find("u") > -1:
-            val = val * 1000 * 1000
-        elif src_unit.find("m") > -1:
-            val = val * 1000 * 1000 * 1000
-        else:
-            val = val * 1000 * 1000 * 1000 * 1000
-
-    unit = 1
-    if tar_unit.endswith("hz"):
-        if tar_unit == "hz":
-            unit = 1
-        elif tar_unit == "Khz":
-            unit = 1000
-        elif tar_unit == "Mhz":
-            unit = 1000 * 1000
-        elif tar_unit == "Ghz":
-            unit = 1000 * 1000 * 1000
-    else:
-        if tar_unit.find("p") > -1:
-            unit = 1
-        elif tar_unit.find("n") > -1:
-            unit = 1000
-        elif tar_unit.find("u") > -1:
-            unit = 1000 * 1000
-        elif tar_unit.find("m") > -1:
-            unit = 1000 * 1000 * 1000
-        else:
-            unit = 1000 * 1000 * 1000 * 1000
-
-    return val / unit
+    if not isinstance(val, Decimal):
+        val = Decimal(val)
+    res = val
+    if tar_unit is None or len(tar_unit.strip()) == 0:
+        return res
+    for unit_dict in UNIT.values():
+        for src_item in unit_dict.items():
+            if src_unit.lower() == src_item[0].lower():
+                res = res * Decimal(str(src_item[1]))
+                for tar_item in unit_dict.items():
+                    if tar_unit.lower() == tar_item[0].lower():
+                        res = res / Decimal(str(tar_item[1]))
+                        return res
+    return val

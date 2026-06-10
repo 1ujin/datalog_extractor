@@ -102,28 +102,7 @@ class TableTab(QTabWidget):
                     compare_chip_dict[test_name] = compare_test_dict
 
                 if test_dict is not None:
-                    unit = 1
                     test_unit = test_dict.get("__unit")
-                    if test_unit is not None and len(test_unit) > 0:
-                        if test_unit == "hz":
-                            unit = 1
-                        elif test_unit == "Khz":
-                            unit = 1000
-                        elif test_unit == "Mhz":
-                            unit = 1000 * 1000
-                        elif test_unit == "Ghz":
-                            unit = 1000 * 1000 * 1000
-
-                        elif test_unit.find("p") > -1:
-                            unit = 1
-                        elif test_unit.find("n") > -1:
-                            unit = 1000
-                        elif test_unit.find("u") > -1:
-                            unit = 1000 * 1000
-                        elif test_unit.find("m") > -1:
-                            unit = 1000 * 1000 * 1000
-                        else:
-                            unit = 1000 * 1000 * 1000 * 1000
 
                     # 匹配Pin
                     pin_dict = test_dict.get(pin_name)
@@ -134,26 +113,8 @@ class TableTab(QTabWidget):
                             compare_test_dict[pin_name] = compare_pin_values
 
                         val, val_unit = group[7].strip().split(" ", 1)
-                        if val_unit == "hz":
-                            val = Decimal(val)
-                        elif val_unit == "Khz":
-                            val = Decimal(val) * 1000
-                        elif val_unit == "Mhz":
-                            val = Decimal(val) * 1000 * 1000
-                        elif val_unit == "Ghz":
-                            val = Decimal(val) * 1000 * 1000 * 1000
+                        val = util.convert_unit(val, val_unit, test_unit)
 
-                        elif val_unit.find("p") > -1:
-                            val = Decimal(val)
-                        elif val_unit.find("n") > -1:
-                            val = Decimal(val) * 1000
-                        elif val_unit.find("u") > -1:
-                            val = Decimal(val) * 1000 * 1000
-                        elif val_unit.find("m") > -1:
-                            val = Decimal(val) * 1000 * 1000 * 1000
-                        else:
-                            val = Decimal(val) * 1000 * 1000 * 1000 * 1000
-                        val /= unit
                         if not show_retest:
                             compare_pin_values.clear()
                         compare_pin_values.append(val)
@@ -204,28 +165,7 @@ class TableTab(QTabWidget):
                                 compare_test_dict = dict()
                                 compare_testsuite_od[test_name] = compare_test_dict
 
-                            unit = 1
                             test_unit = test_dict.get("__unit")
-                            if test_unit is not None and len(test_unit) > 0:
-                                if test_unit == "hz":
-                                    unit = 1
-                                elif test_unit == "Khz":
-                                    unit = 1000
-                                elif test_unit == "Mhz":
-                                    unit = 1000 * 1000
-                                elif test_unit == "Ghz":
-                                    unit = 1000 * 1000 * 1000
-
-                                elif test_unit.find("p") > -1:
-                                    unit = 1
-                                elif test_unit.find("n") > -1:
-                                    unit = 1000
-                                elif test_unit.find("u") > -1:
-                                    unit = 1000 * 1000
-                                elif test_unit.find("m") > -1:
-                                    unit = 1000 * 1000 * 1000
-                                else:
-                                    unit = 1000 * 1000 * 1000 * 1000
                     else:
                         test_dict = None
                     line = f.readline()
@@ -244,27 +184,8 @@ class TableTab(QTabWidget):
                                 if compare_pin_values is None:
                                     compare_pin_values = list()
                                     compare_test_dict[pin_name] = compare_pin_values
+                                val = util.convert_unit(val, val_unit, test_unit)
 
-                                if val_unit == "hz":
-                                    val = Decimal(val)
-                                elif val_unit == "Khz":
-                                    val = Decimal(val) * 1000
-                                elif val_unit == "Mhz":
-                                    val = Decimal(val) * 1000 * 1000
-                                elif val_unit == "Ghz":
-                                    val = Decimal(val) * 1000 * 1000 * 1000
-
-                                elif val_unit.find("p") > -1:
-                                    val = Decimal(val)
-                                elif val_unit.find("n") > -1:
-                                    val = Decimal(val) * 1000
-                                elif val_unit.find("u") > -1:
-                                    val = Decimal(val) * 1000 * 1000
-                                elif val_unit.find("m") > -1:
-                                    val = Decimal(val) * 1000 * 1000 * 1000
-                                else:
-                                    val = Decimal(val) * 1000 * 1000 * 1000 * 1000
-                                val /= unit
                                 if not show_retest:
                                     compare_pin_values.clear()
                                 compare_pin_values.append(val)

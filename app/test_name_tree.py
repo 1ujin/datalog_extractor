@@ -63,6 +63,23 @@ class FullSizedDelegate(QStyledItemDelegate):
         parent.setGeometry(option.rect)
 
 
+class CustomComboBox(QComboBox):
+    """
+    切换时可以获取旧值的下拉框
+    """
+
+    changed = QtCore.pyqtSignal(str, str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._old_text = self.currentText()
+        self.currentTextChanged.connect(self._on_changed)
+
+    def _on_changed(self, new_text):
+        self.changed.emit(self._old_text, new_text)
+        self._old_text = new_text
+
+
 class TestNameTree(QWidget):
     """docstring for TestNameTree
     测试项树状列表
@@ -372,31 +389,31 @@ class TestNameTree(QWidget):
         if root.childCount() == 0 or self.mode == "爱德万" and not root.parent():
             root.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsAutoTristate)
         elif self.mode == "泰瑞达" or root.parent():
-            unit_cb = QComboBox(self.tree)
-            unit_cb.setStyleSheet("QComboBox { max-width: 75px; }")
-            unit_cb.addItems(["V/A", "mV/mA", "uV/uA", "nV/nA", "pV/pA", "hz", "Khz", "Mhz", "Ghz"])
-            unit_cb.setCurrentIndex(2)
-            self.tree.setItemWidget(root, 3, unit_cb)
+            unit_ccb = CustomComboBox(self.tree)
+            unit_ccb.setStyleSheet("QComboBox { max-width: 75px; }")
+            self.tree.setItemWidget(root, 3, unit_ccb)
             unit = values[1]["__unit"]
             lower_limit = values[1]["__lower_bound"]
             upper_limit = values[1]["__upper_bound"]
             if isinstance(unit, str):
-                if unit.endswith("hz") and unit_cb.findText(unit) > -1:
-                    unit_cb.setCurrentText(unit)
-                elif unit.find("p") > -1:
-                    unit_cb.setCurrentText("pV/pA")
-                elif unit.find("n") > -1:
-                    unit_cb.setCurrentText("nV/nA")
-                elif unit.find("u") > -1:
-                    unit_cb.setCurrentText("uV/uA")
-                elif unit.find("m") > -1:
-                    unit_cb.setCurrentText("mV/mA")
+                if unit.lower() in util.LOOKUP_UNIT:
+                    units = util.UNIT.get(util.LOOKUP_UNIT.get(unit.lower())).keys()
+                    unit_ccb.addItems(units)
+                    for units_key in units:
+                        if unit.lower() == units_key.lower():
+                            unit_ccb.setCurrentText(units_key)
                 else:
-                    unit_cb.setCurrentText("V/A")
+                    unit_ccb.addItem(unit)
+                    unit_ccb.setCurrentText(unit)
             if isinstance(lower_limit, Decimal):
                 root.setText(1, str(util.convert_decimal(lower_limit)))
             if isinstance(upper_limit, Decimal):
                 root.setText(2, str(util.convert_decimal(upper_limit)))
+            unit_ccb.changed.connect(lambda old_unit, new_unit: [
+                root.setText(1, str(util.convert_unit(root.text(1), old_unit, new_unit))),
+                root.setText(2, str(util.convert_unit(root.text(2), old_unit, new_unit))),
+                None
+            ][-1])
             root.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsAutoTristate | Qt.ItemIsEditable)
         return root
 
