@@ -64,30 +64,30 @@ class DatalogExtractor(QMainWindow):
 
         self.tab = QTabWidget(splitter)
         self.test_name_tree = TestNameTree(self.tab)
-        self.test_name_tree.signal_has_checked.connect(self.switch_compare_button)
+        self.test_name_tree.signal_has_checked.connect(self.switch_extract_button)
         self.tab.setStyleSheet("QTabWidget:pane { padding: 0px; }")
         self.tab.setTabPosition(QTabWidget.West)
         self.tab.addTab(self.test_name_tree, "导入测试项")
         # self.text_edit = QPlainTextEdit(self)
         # self.text_edit.textChanged.connect(self.textChangedHandle)
-        # self.text_edit.setPlaceholderText("请输入要对比的测试项名称，以逗号隔开，例：\n测试项A Pin1，测试项A Pin2，测试项B Pin3")
+        # self.text_edit.setPlaceholderText("请输入要提取的测试项名称，以逗号隔开，例：\n测试项A Pin1，测试项A Pin2，测试项B Pin3")
         # self.text_edit.setFont(QFont("微软雅黑", 10))
         # self.tab.addTab(self.text_edit, "手动填写测试项")
         self.test_pin_table = TestPinTable(self.tab)
         self.test_pin_table.table.cellChanged.connect(self.test_pin_table_changed_handle)
         # self.tab.addTab(self.test_pin_table, "手动填写测试项")
-        self.tab.currentChanged.connect(lambda _: self.switch_compare_button())
+        self.tab.currentChanged.connect(lambda _: self.switch_extract_button())
 
         self.file_list_before_aging = FileListBox(self)
-        self.file_list_before_aging.signal_row_count.connect(self.switch_compare_button)
+        self.file_list_before_aging.signal_row_count.connect(self.switch_extract_button)
         # self.file_list_after_aging = FileListBox(self)
-        # self.file_list_after_aging.Signal_Row_Count.connect(self.switch_compare_button)
+        # self.file_list_after_aging.Signal_Row_Count.connect(self.switch_extract_button)
 
-        self.compare_btn = MovablePushButton(self)
-        self.compare_btn.setToolTip("对比并展示表格")
-        self.compare_btn.setIconSize(QSize(32, 32))
-        self.compare_btn.setIcon(QIcon(":/images/data-extract.png"))
-        self.compare_btn.setStyleSheet("\
+        self.extract_btn = MovablePushButton(self)
+        self.extract_btn.setToolTip("提取数据并展示表格")
+        self.extract_btn.setIconSize(QSize(32, 32))
+        self.extract_btn.setIcon(QIcon(":/images/data-extract.png"))
+        self.extract_btn.setStyleSheet("\
             QPushButton { \
                 border-radius: 35px; \
                 width: 70px; \
@@ -100,8 +100,8 @@ class DatalogExtractor(QMainWindow):
             QPushButton:enabled:pressed { \
                 background-color: green; \
             }")
-        self.compare_btn.clicked.connect(self.compare_datalog)
-        self.compare_btn.hide()
+        self.extract_btn.clicked.connect(self.extract_datalog)
+        self.extract_btn.hide()
 
         self.excel_btn = MovablePushButton(self)
         self.excel_btn.setToolTip("导出并打开Excel文件")
@@ -123,9 +123,9 @@ class DatalogExtractor(QMainWindow):
         self.excel_btn.clicked.connect(self.export_and_open_excel)
         self.excel_btn.hide()
 
-        self.geometry_animation = QPropertyAnimation(self.compare_btn, b"geometry")
+        self.geometry_animation = QPropertyAnimation(self.extract_btn, b"geometry")
         self.geometry_animation.setDuration(300)
-        self.visible_animation = QPropertyAnimation(self.compare_btn, b"visible")
+        self.visible_animation = QPropertyAnimation(self.extract_btn, b"visible")
         self.visible_animation.setDuration(1)
         self.visible_animation.setStartValue(True)
         self.visible_animation.setEndValue(False)
@@ -175,28 +175,28 @@ class DatalogExtractor(QMainWindow):
             self.taskbar_button.setWindow(self.windowHandle())
 
     def resizeEvent(self, event):  # pylint: disable=invalid-name
-        if self.compare_btn.isVisible():
-            self.compare_btn.setGeometry(QRect(self.geometry().width() - 150, self.geometry().height() - 150, 70, 70))
+        if self.extract_btn.isVisible():
+            self.extract_btn.setGeometry(QRect(self.geometry().width() - 150, self.geometry().height() - 150, 70, 70))
         if self.excel_btn.isVisible():
             self.excel_btn.setGeometry(QRect(self.geometry().width() - 150, self.geometry().height() - 150, 70, 70))
         super(DatalogExtractor, self).resizeEvent(event)
 
-    def switch_compare_button(self, count=None):
+    def switch_extract_button(self, count=None):
         if self.table_layout_widget.isVisible():
             return
 
         if count == 0 or not self.comparable():
-            if self.compare_btn.geometry().y() <= self.geometry().height():
-                self.geometry_animation.setStartValue(self.compare_btn.geometry())
+            if self.extract_btn.geometry().y() <= self.geometry().height():
+                self.geometry_animation.setStartValue(self.extract_btn.geometry())
                 self.geometry_animation.setEndValue(
-                    QRect(self.compare_btn.geometry().x(), self.geometry().height() + 10, 70, 70))
+                    QRect(self.extract_btn.geometry().x(), self.geometry().height() + 10, 70, 70))
 
                 self.animation_group.addAnimation(self.geometry_animation)
                 self.animation_group.addAnimation(self.visible_animation)
                 self.animation_group.start()
 
-        elif self.compare_btn.geometry().y() > self.geometry().height() or not self.compare_btn.isVisible():
-            self.compare_btn.show()
+        elif self.extract_btn.geometry().y() > self.geometry().height() or not self.extract_btn.isVisible():
+            self.extract_btn.show()
             self.geometry_animation.setStartValue(
                 QRect(self.geometry().width() - 150, self.geometry().height(), 70, 70))
             self.geometry_animation.setEndValue(
@@ -216,9 +216,9 @@ class DatalogExtractor(QMainWindow):
             return False
         return True
 
-    def compare_datalog(self):
+    def extract_datalog(self):
         try:
-            compare_reply = None
+            extract_reply = None
             has_result = False
             for i in range(self.table.count()):
                 has_result = False
@@ -226,19 +226,19 @@ class DatalogExtractor(QMainWindow):
                 if isinstance(table_, QTableWidget):
                     has_result = has_result or table_.rowCount() != 0
             if has_result:
-                compare_msg_box = QMessageBox(QMessageBox.Question, "查看对比结果", "是否重新对比并生成结果？")
-                compare_msg_box.setWindowIcon(self.logo)
-                compare_msg_box.addButton("重新生成", QMessageBox.YesRole)
-                compare_msg_box.addButton("显示上次结果", QMessageBox.NoRole)
-                quit_cancel_btn = compare_msg_box.addButton("取消", QMessageBox.RejectRole)
-                compare_msg_box.setDefaultButton(quit_cancel_btn)
-                compare_reply = compare_msg_box.exec()
+                extract_msg_box = QMessageBox(QMessageBox.Question, "查看提取结果", "是否重新提取并生成结果？")
+                extract_msg_box.setWindowIcon(self.logo)
+                extract_msg_box.addButton("重新生成", QMessageBox.YesRole)
+                extract_msg_box.addButton("显示上次结果", QMessageBox.NoRole)
+                quit_cancel_btn = extract_msg_box.addButton("取消", QMessageBox.RejectRole)
+                extract_msg_box.setDefaultButton(quit_cancel_btn)
+                extract_reply = extract_msg_box.exec()
 
-            if compare_reply == 2:
+            if extract_reply == 2:
                 return
 
-            if not has_result or compare_reply == 0:
-                if has_result and compare_reply == 0:
+            if not has_result or extract_reply == 0:
+                if has_result and extract_reply == 0:
                     # for i in range(self.table.count()):
                     #     self.table.widget(i) is None
                     self.table.clear()
@@ -264,7 +264,7 @@ class DatalogExtractor(QMainWindow):
             QMessageBox.warning(self, "提示", "失败\n" + str(e) + "\n" + str(tb)[19:-1] + "\n" + tb.line)
 
     def switch_to_table(self):
-        self.compare_btn.hide()
+        self.extract_btn.hide()
         self.file_list_before_aging.hide()
         # self.file_list_after_aging.hide()
         self.table_layout_widget.show()
@@ -277,12 +277,12 @@ class DatalogExtractor(QMainWindow):
         self.file_list_before_aging.show()
         # self.file_list_after_aging.show()
         if self.comparable():
-            self.compare_btn.setGeometry(QRect(self.geometry().width() - 150, self.geometry().height() - 150, 70, 70))
-            self.compare_btn.show()
+            self.extract_btn.setGeometry(QRect(self.geometry().width() - 150, self.geometry().height() - 150, 70, 70))
+            self.extract_btn.show()
 
     def test_pin_table_changed_handle(self):
         try:
-            self.switch_compare_button()
+            self.switch_extract_button()
         except Exception as e:  # pylint: disable=broad-except
             tb = traceback.extract_tb(e.__traceback__)[-1]
             QMessageBox.warning(self, "提示", "失败\n" + str(e) + "\n" + str(tb)[19:-1] + "\n" + tb.line)
