@@ -48,7 +48,10 @@ class FileListBox(QWidget):
         self.setAcceptDrops(True)
         self.installEventFilter(CustomEventHandler(self))
 
-        self.folder_list.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.folder_list.setDragEnabled(True)
+        self.folder_list.setDefaultDropAction(Qt.MoveAction)
+        self.folder_list.setDragDropMode(QAbstractItemView.InternalMove)
+        self.folder_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.folder_list.itemDoubleClicked.connect(lambda item: self.expand_single_folder(item.text()))
         self.folder_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.folder_list.customContextMenuRequested[QPoint].connect(self.list_context_menu_event)
