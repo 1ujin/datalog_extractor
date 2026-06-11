@@ -28,6 +28,9 @@ MIN_SIZE = -sys.maxsize - 1
 FAILED_COLOR = QBrush(QColor(255, 0, 0))
 FILENAME_REGEX = r"^([0-9]+)(_(?i)failed)?\.(?i)txt"
 RGB_WHITE = 256 * 256 * 256
+CHIP_ID_COL = 0
+PASS_FLAG_COL = 1
+ROUND_NUM_COL = 2
 
 
 class EditableTabBar(QTabBar):
@@ -330,30 +333,32 @@ class TableTab(QTabWidget):
                 table = QTableWidget(0, 0)
 
                 table.clear()
-                table.setColumnCount(2)
+                table.setColumnCount(ROUND_NUM_COL + 1)
                 if self.parent.test_name_tree.mode == "爱德万":
                     chip_row = 6
                     table.setRowCount(chip_row)
-                    table.setItem(0, 0, self.get_table_item("TestSuite"))
-                    table.setItem(1, 0, self.get_table_item("Test Name"))
-                    table.setItem(2, 0, self.get_table_item("Pin"))
-                    table.setItem(3, 0, self.get_table_item("Min"))
-                    table.setItem(4, 0, self.get_table_item("Max"))
-                    table.setItem(5, 0, self.get_table_item("Unit"))
+                    table.setItem(0, CHIP_ID_COL, self.get_table_item("TestSuite"))
+                    table.setItem(0, PASS_FLAG_COL, self.get_table_item("PASSFG"))
+                    table.setItem(1, CHIP_ID_COL, self.get_table_item("Test Name"))
+                    table.setItem(2, CHIP_ID_COL, self.get_table_item("Pin"))
+                    table.setItem(3, CHIP_ID_COL, self.get_table_item("Min"))
+                    table.setItem(4, CHIP_ID_COL, self.get_table_item("Max"))
+                    table.setItem(5, CHIP_ID_COL, self.get_table_item("Unit"))
                 else:
                     chip_row = 5
                     table.setRowCount(chip_row)
-                    table.setItem(0, 0, self.get_table_item("Test Name"))
-                    table.setItem(1, 0, self.get_table_item("Pin"))
-                    table.setItem(2, 0, self.get_table_item("Min"))
-                    table.setItem(3, 0, self.get_table_item("Max"))
-                    table.setItem(4, 0, self.get_table_item("Unit"))
+                    table.setItem(0, CHIP_ID_COL, self.get_table_item("Test Name"))
+                    table.setItem(0, PASS_FLAG_COL, self.get_table_item("PASSFG"))
+                    table.setItem(1, CHIP_ID_COL, self.get_table_item("Pin"))
+                    table.setItem(2, CHIP_ID_COL, self.get_table_item("Min"))
+                    table.setItem(3, CHIP_ID_COL, self.get_table_item("Max"))
+                    table.setItem(4, CHIP_ID_COL, self.get_table_item("Unit"))
                     table.setRowCount(chip_row)
-                # table.setSpan(0, 0, chip_row, 2)
-                # table.setItem(0, 0, self.get_table_item(folder_path, Qt.AlignVCenter | Qt.TextWordWrap))
-                self.freeze_cell = (3, chip_row + 1)
+                # table.setSpan(0, CHIP_ID_COL, chip_row, 2)
+                # table.setItem(0, CHIP_ID_COL, self.get_table_item(folder_path, Qt.AlignVCenter | Qt.TextWordWrap))
 
-                testsuite_col = 2
+                testsuite_col = ROUND_NUM_COL + 1
+                self.freeze_cell = (testsuite_col + 1, chip_row + 1)
                 if self.parent.test_name_tree.mode == "泰瑞达":
                     self.fill_table_headers(table, pin_map, 0, testsuite_col)
                 else:
@@ -375,13 +380,13 @@ class TableTab(QTabWidget):
                 # 测试结果
                 for compare_chip_item in folder_od.items():
                     # 循环样品
-                    testsuite_col = 2
+                    testsuite_col = ROUND_NUM_COL + 1
                     max_round_row = 1
                     chip_id, (_, passed, chip_dict) = compare_chip_item
                     table.insertRow(table.rowCount())
                     if self.parent.test_name_tree.mode == "泰瑞达":
                         _, max_round_row, done = self.fill_table_contents(
-                            table, chip_dict, pin_map, chip_row, 2, max_round_row, done)
+                            table, chip_dict, pin_map, chip_row, testsuite_col, max_round_row, done)
                     else:
                         for testsuite_item in pin_map.items():
                             if self.progress.wasCanceled():
@@ -396,26 +401,34 @@ class TableTab(QTabWidget):
                             testsuite_col += test_name_col
 
                     # 芯片编号
-                    if table.item(chip_row, 0) and table.item(chip_row, 0).background().color().rgb() % RGB_WHITE != 0:
-                        table.item(chip_row, 0).setText(chip_id)
+                    if table.item(chip_row, CHIP_ID_COL)\
+                            and table.item(chip_row, CHIP_ID_COL).background().color().rgb() % RGB_WHITE != 0:
+                        table.item(chip_row, CHIP_ID_COL).setText(chip_id)
                     else:
-                        table.setItem(chip_row, 0, self.get_table_item(chip_id))
-                    table.setSpan(chip_row, 0, max_round_row, 1)
+                        table.setItem(chip_row, CHIP_ID_COL, self.get_table_item(chip_id))
+                    table.setSpan(chip_row, CHIP_ID_COL, max_round_row, 1)
+                    table.setSpan(chip_row, PASS_FLAG_COL, max_round_row, 1)
                     if max_round_row > 1:
                         for i in range(max_round_row):
-                            table.setItem(chip_row + i, 1, self.get_table_item(i + 1))
+                            table.setItem(chip_row + i, ROUND_NUM_COL, self.get_table_item(i + 1))
                     if passed is False:
-                        table.item(chip_row, 0).setBackground(FAILED_COLOR)
+                        table.item(chip_row, CHIP_ID_COL).setBackground(FAILED_COLOR)
+                        table.setItem(chip_row, PASS_FLAG_COL, self.get_table_item("FAIL"))
+                        table.item(chip_row, PASS_FLAG_COL).setBackground(FAILED_COLOR)
+                    else:
+                        table.setItem(chip_row, PASS_FLAG_COL, self.get_table_item("PASS"))
                     chip_row += max_round_row
 
                 round_col_removable = True
                 for j in range(table.rowCount()):
-                    item = table.item(j, 1)
+                    item = table.item(j, ROUND_NUM_COL)
                     if item is not None and item.text().isdigit() and int(item.text()) > 1:
                         round_col_removable = False
                         break
                 if round_col_removable:
-                    table.removeColumn(1)
+                    # 删除多轮序号
+                    table.removeColumn(ROUND_NUM_COL)
+                    # 调整冻结窗口
                     self.freeze_cell = (self.freeze_cell[0] - 1, self.freeze_cell[1])
                 self.addTab(table, os.path.basename(folder_name))
 
@@ -546,9 +559,9 @@ class TableTab(QTabWidget):
                     table.setItem(chip_row + round_row, test_parent_col + test_name_col + pin_name_col,
                                   self.get_table_item(util.convert_decimal(pin_val), Qt.AlignRight | Qt.AlignVCenter))
                     if lower_bound and pin_val < lower_bound or upper_bound and pin_val > upper_bound:
-                        if table.item(chip_row, 0) is None:
-                            table.setItem(chip_row, 0, self.get_table_item(""))
-                        table.item(chip_row, 0).setBackground(FAILED_COLOR)
+                        if table.item(chip_row, CHIP_ID_COL) is None:
+                            table.setItem(chip_row, CHIP_ID_COL, self.get_table_item(""))
+                        table.item(chip_row, CHIP_ID_COL).setBackground(FAILED_COLOR)
                         table.item(chip_row + round_row, test_parent_col + test_name_col + pin_name_col) \
                             .setBackground(FAILED_COLOR)
                     done += 1
@@ -570,16 +583,20 @@ class TableTab(QTabWidget):
     def show_only_failed(self):
         self.only_failed = not self.only_failed
         if self.only_failed:
-            self: QTabWidget
             for i in range(self.count()):
+                begin_row = self.freeze_cell[1] - 1
+                begin_col = self.freeze_cell[0] - 1
+                self: QTabWidget
                 table: QTableWidget = self.widget(i)
-                begin_row = table.rowSpan(0, 0)
-                begin_col = table.columnSpan(0, 0)
+                # begin_row = table.rowSpan(0, 0)
+                # begin_col = table.columnSpan(0, 0)
                 end_row = table.rowCount()
                 end_col = table.columnCount()
                 for j in range(begin_row, end_row):
-                    if table.item(j, 0) and table.item(j, 0).background().color().rgb() % RGB_WHITE == 0:
-                        table.hideRow(j)
+                    if table.item(j, CHIP_ID_COL)\
+                            and table.item(j, CHIP_ID_COL).background().color().rgb() % RGB_WHITE == 0:
+                        for k in range(table.rowSpan(j, CHIP_ID_COL)):
+                            table.hideRow(j + k)
                 for j in range(begin_col, end_col):
                     hide_col = True
                     for k in range(begin_row, end_row):
