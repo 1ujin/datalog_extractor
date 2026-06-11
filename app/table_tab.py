@@ -446,6 +446,9 @@ class TableTab(QTabWidget):
         # if self.rowCount() != 0 and self.columnCount() != 0:
         #     self.show()
         self.show()
+        # 重新填充表格后重置只显示失效按钮
+        if self.only_failed:
+            self.parent.show_only_failed()
         del pin_map
         del path_dict
         gc.collect()
